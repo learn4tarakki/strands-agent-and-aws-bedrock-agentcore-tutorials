@@ -1,0 +1,62 @@
+default_agent: expense_tracker_agent
+agents:
+  expense_tracker_agent:
+    name: expense_tracker_agent
+    language: python
+    node_version: '20'
+    entrypoint: /home/ubu/Documents/work/l4t/ai-python-series/strands-agent-and-aws-bedrock-agentcore-tutorials/main.py
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: none
+    source_path: /home/ubu/Documents/work/l4t/ai-python-series/strands-agent-and-aws-bedrock-agentcore-tutorials
+    aws:
+      execution_role: arn:aws:iam::362942319756:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-ae555e9582
+      execution_role_auto_create: false
+      account: '362942319756'
+      region: us-east-1
+      ecr_repository: 362942319756.dkr.ecr.us-east-1.amazonaws.com/l4t/projects
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: expense_tracker_agent-kW34LU70hV
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:362942319756:runtime/expense_tracker_agent-kW34LU70hV
+      agent_session_id: 24405dfd-61bd-46f5-b3ef-bee60809157f
+    codebuild:
+      project_name: bedrock-agentcore-expense_tracker_agent-builder
+      execution_role: arn:aws:iam::362942319756:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-ae555e9582
+      source_bucket: bedrock-agentcore-codebuild-sources-362942319756-us-east-1
+    memory:
+      mode: STM_ONLY
+      memory_id: expense_tracker_agent_mem-ElJZMF3pDl
+      memory_arn: arn:aws:bedrock-agentcore:us-east-1:362942319756:memory/expense_tracker_agent_mem-ElJZMF3pDl
+      memory_name: expense_tracker_agent_mem
+      event_expiry_days: 30
+      first_invoke_memory_check_done: true
+      was_created_by_toolkit: true
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false

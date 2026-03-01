@@ -67,6 +67,70 @@ Builds a real agent with custom tools using the `@tool` decorator. The agent can
 
 ---
 
+## Deploying to AWS AgentCore
+
+`main.py` is the AgentCore entrypoint that wraps the expense tracker agent.
+
+### Additional Prerequisites
+
+- Docker not required (CodeBuild handles container builds in the cloud)
+- IAM permissions for CodeBuild to push to ECR (see Troubleshooting below)
+
+### Install AgentCore packages
+
+```bash
+uv add bedrock-agentcore bedrock-agentcore-starter-toolkit
+```
+
+### Configure
+
+```bash
+uv run agentcore configure --name expense_tracker_agent --entrypoint main.py
+```
+
+> Use underscores in the agent name — dashes are not allowed.
+
+The CLI will interactively ask the following:
+
+| Prompt | Recommended choice |
+|---|---|
+| **Dependency file** | Press Enter to use auto-detected `pyproject.toml` |
+| **Deployment type** | `1` Direct Code Deploy (no Docker) or `2` Container |
+| **Execution role** | Press Enter to auto-create |
+| **ECR Repository URI** | Press Enter to auto-create, or paste an existing ECR URI |
+| **Authorization** | Press Enter to use default IAM authorization |
+| **Request header allowlist** | Press Enter to skip (default) |
+| **Memory setup** | Press Enter to create new short-term memory |
+| **Long-term memory** | `no` unless you need cross-session memory (adds ~2 min processing) |
+
+### Test locally before deploying
+
+```bash
+uv run agentcore deploy --local
+```
+
+Then invoke locally:
+
+```bash
+uv run agentcore invoke '{"prompt": "Add ₹500 on groceries, ₹150 on coffee at Starbucks, ₹800 on AWS bill, ₹300 on Ola to airport, ₹4500 on flight ticket. Show spending summary and largest expense."}'
+```
+
+### Deploy to cloud
+
+```bash
+uv run agentcore deploy
+```
+
+This builds an ARM64 container via AWS CodeBuild, pushes it to ECR, and provisions an AgentCore Runtime endpoint — no local Docker required.
+
+### Invoke the deployed agent
+
+```bash
+uv run agentcore invoke '{"prompt": "Add ₹500 on groceries, ₹150 on coffee at Starbucks, ₹800 on AWS bill, ₹300 on Ola to airport, ₹4500 on flight ticket. Show spending summary and largest expense."}'
+```
+
+---
+
 ## Troubleshooting
 
 **AWS credentials error** — Run `aws configure` or set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` as environment variables.
@@ -74,6 +138,34 @@ Builds a real agent with custom tools using the `@tool` decorator. The agent can
 **Model access denied** — Enable the model in AWS Bedrock console → Model access.
 
 **`ANTHROPIC_API_KEY` not found** — Make sure `.env` exists in the project root with your key (file 03 only).
+
+**AgentCore ECR push denied** — The CodeBuild role needs ECR push permissions. Add an inline policy to the role `AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-*`:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage"
+      ],
+      "Resource": "arn:aws:ecr:<region>:<account-id>:repository/<your-repo>"
+    }
+  ]
+}
+```
 
 ## Resources
 

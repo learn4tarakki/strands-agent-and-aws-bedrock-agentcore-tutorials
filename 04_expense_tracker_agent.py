@@ -57,7 +57,8 @@ def get_largest_expense() -> str:
 
 agent = Agent(tools=[add_expense, get_spending_summary, get_largest_expense])
 
-agent("""
+if __name__ == "__main__":
+    agent("""
 I had the following expenses this week:
 - ₹500 on groceries
 - ₹150 on coffee at Starbucks
