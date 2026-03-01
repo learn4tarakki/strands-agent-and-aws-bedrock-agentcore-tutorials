@@ -5,3 +5,4 @@ agent = Agent()
 
 print("Model config:", agent.model.config)
 agent("Explain what agentic AI is in 2-3 sentences.")
+print("")

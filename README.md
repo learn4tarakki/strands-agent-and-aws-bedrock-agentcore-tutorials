@@ -74,3 +74,8 @@ Builds a real agent with custom tools using the `@tool` decorator. The agent can
 **Model access denied** — Enable the model in AWS Bedrock console → Model access.
 
 **`ANTHROPIC_API_KEY` not found** — Make sure `.env` exists in the project root with your key (file 03 only).
+
+## Resources
+
+- [Strands Bedrock model source](https://github.com/strands-agents/sdk-python/blob/main/src/strands/models/bedrock.py) — code to find the default model in Strands Agent
+- [Anthropic models overview](https://platform.claude.com/docs/en/about-claude/models/overview) — choosing Anthropic models

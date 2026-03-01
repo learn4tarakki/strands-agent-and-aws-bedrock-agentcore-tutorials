@@ -2,7 +2,7 @@ from strands import Agent
 from strands.models import BedrockModel
 
 model = BedrockModel(
-    model_id="anthropic.claude-3-5-haiku-20241022-v1:0",
+    model_id="us.anthropic.claude-opus-4-6-v1",
     region_name="us-east-1",
     temperature=0.7,
     max_tokens=1024,
