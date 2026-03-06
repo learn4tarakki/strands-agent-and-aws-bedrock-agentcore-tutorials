@@ -4,12 +4,12 @@ agents:
     name: expense_tracker_agent
     language: python
     node_version: '20'
-    entrypoint: /home/ubu/Documents/work/l4t/ai-python-series/strands-agent-and-aws-bedrock-agentcore-tutorials/main.py
+    entrypoint: /home/ubu/Documents/work/l4t/ai-python-series/strands-and-agentcore/repo/tutorial-01/main.py
     deployment_type: container
     runtime_type: null
     platform: linux/arm64
     container_runtime: none
-    source_path: /home/ubu/Documents/work/l4t/ai-python-series/strands-agent-and-aws-bedrock-agentcore-tutorials
+    source_path: /home/ubu/Documents/work/l4t/ai-python-series/strands-and-agentcore/repo/tutorial-01
     aws:
       execution_role: arn:aws:iam::362942319756:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-ae555e9582
       execution_role_auto_create: false
