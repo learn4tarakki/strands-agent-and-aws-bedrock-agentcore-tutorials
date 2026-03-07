@@ -32,5 +32,6 @@ Build AI agents with Strands Agents using AWS Bedrock, then deploy to AWS AgentC
 Retrieval Augmented Generation using AWS Strands Agents and Amazon S3 Vector Store.
 - Embed monthly expense journal entries with Bedrock Titan Embeddings V2
 - Store and retrieve vectors from S3 Vector Store
-- Custom Strands tool for semantic search
-- Strands Agent answers questions grounded in retrieved journal context
+- Rerank candidates with Cohere Rerank v3.5 via Bedrock
+- Filter results by relevance score threshold before passing to the LLM
+- Strands Agent answers questions grounded in only the relevant entries

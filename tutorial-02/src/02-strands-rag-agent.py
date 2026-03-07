@@ -3,16 +3,54 @@ import json
 
 from strands import Agent, tool
 
-# Configuration
 S3_VECTOR_BUCKET_NAME = "tutorial-02-expenses-vector-store"
 VECTOR_INDEX_NAME = "expenses-index"
 EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0"
 AWS_REGION = "us-east-1"
 
+# To swap to Amazon reranker: "arn:aws:bedrock:us-east-1::foundation-model/amazon.rerank-v1"
+RERANKER_MODEL_ARN = "arn:aws:bedrock:us-east-1::foundation-model/cohere.rerank-v3-5:0"
+
+# Entries scoring below this after reranking are dropped before sending to the LLM
+RELEVANCE_THRESHOLD = 0.10
+
 QUERIES = [
     "Which month did I spend the most money overall?",
-    "How much did I spend on electricity across all months?",
+    "When did I spend money on fitness or physical health?",
 ]
+
+
+def rerank(query: str, results: list) -> list:
+    """Rerank retrieved results using Bedrock reranker.
+
+    To swap to Cohere reranker hosted on Bedrock, change RERANKER_MODEL_ARN above.
+    To swap to Cohere's direct API, replace this function body with the Cohere SDK call
+    keeping the same signature: rerank(query, results) -> list.
+    """
+    bedrock_agent_runtime = boto3.client("bedrock-agent-runtime", region_name=AWS_REGION)
+
+    texts = [r.get("metadata", {}).get("text", "") for r in results]
+
+    response = bedrock_agent_runtime.rerank(
+        queries=[{"type": "TEXT", "textQuery": {"text": query}}],
+        sources=[
+            {
+                "type": "INLINE",
+                "inlineDocumentSource": {"type": "TEXT", "textDocument": {"text": text}},
+            }
+            for text in texts
+        ],
+        rerankingConfiguration={
+            "type": "BEDROCK_RERANKING_MODEL",
+            "bedrockRerankingConfiguration": {
+                "modelConfiguration": {"modelArn": RERANKER_MODEL_ARN},
+                "numberOfResults": len(results),
+            },
+        },
+    )
+
+    reranked = sorted(response["results"], key=lambda x: x["relevanceScore"], reverse=True)
+    return [(results[r["index"]], r["relevanceScore"]) for r in reranked]
 
 
 @tool
@@ -23,12 +61,11 @@ def search_journal(query: str) -> str:
         query: The question or search string to look up.
 
     Returns:
-        Formatted string containing the top matching journal passages.
+        Formatted string containing journal passages reranked by relevance.
     """
     bedrock_client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
     s3vectors_client = boto3.client("s3vectors", region_name=AWS_REGION)
 
-    # Embed the query
     body = json.dumps({"inputText": query, "dimensions": 1024, "normalize": True})
     response = bedrock_client.invoke_model(
         modelId=EMBEDDING_MODEL_ID,
@@ -38,12 +75,11 @@ def search_journal(query: str) -> str:
     )
     embedding = json.loads(response["body"].read())["embedding"]
 
-    # Query the vector store — text is stored in metadata so it comes back in results
     response = s3vectors_client.query_vectors(
         vectorBucketName=S3_VECTOR_BUCKET_NAME,
         indexName=VECTOR_INDEX_NAME,
         queryVector={"float32": embedding},
-        topK=3,
+        topK=5,
         returnMetadata=True,
     )
 
@@ -51,12 +87,21 @@ def search_journal(query: str) -> str:
     if not results:
         return "No matching journal entries found."
 
+    print(f"  Vector search returned {len(results)} entries, reranking...")
+    reranked = rerank(query, results)
+
     parts = []
-    for r in results:
-        score = r.get("score", 0)
+    for rank, (r, score) in enumerate(reranked, start=1):
         metadata = r.get("metadata", {})
         text = metadata.get("text", "[text not found]")
-        parts.append(f"[score={score:.4f} | month={metadata.get('month')} | year={metadata.get('year')}]\n{text}")
+        if score >= RELEVANCE_THRESHOLD:
+            print(f"  Reranked #{rank}: {r['key']} (relevance={score:.4f})")
+            parts.append(f"[rank={rank} | relevance={score:.4f} | month={metadata.get('month')} | year={metadata.get('year')}]\n{text}")
+        else:
+            print(f"  Reranked #{rank}: {r['key']} (relevance={score:.4f}) — dropped (below threshold)")
+
+    if not parts:
+        return "No sufficiently relevant journal entries found."
 
     return "\n\n---\n\n".join(parts)
 
@@ -80,9 +125,8 @@ def main():
         tools=[search_journal],
         system_prompt=(
             "You are a helpful personal finance assistant. The user is asking about their own "
-            "expense journal. Always use the search_journal tool to find relevant journal entries "
-            "before answering. Refer to the user as 'you' and base your answer strictly on what "
-            "the tool returns."
+            "expense journal. Call the search_journal tool exactly once, then answer based strictly "
+            "on what it returns. Refer to the user as 'you'."
         ),
     )
 
