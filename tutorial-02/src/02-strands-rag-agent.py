@@ -76,7 +76,7 @@ def main():
     query = QUERIES[int(choice) - 1]
 
     agent = Agent(
-        model="us.anthropic.claude-sonnet-4-6-20251001-v2:0",
+        model="us.anthropic.claude-sonnet-4-6",
         tools=[search_journal],
         system_prompt=(
             "You are a helpful personal finance assistant. The user is asking about their own "

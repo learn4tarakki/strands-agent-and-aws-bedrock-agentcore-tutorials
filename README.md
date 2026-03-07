@@ -6,6 +6,18 @@ Each tutorial is self-contained with its own dependencies and setup instructions
 
 ---
 
+## Check available Claude models in your AWS account
+
+```bash
+aws bedrock list-foundation-models --region us-east-1 --query "modelSummaries[?contains(modelId, 'claude')].modelId" --output table
+```
+
+```bash
+aws bedrock list-inference-profiles --region us-east-1 --query "inferenceProfileSummaries[?contains(inferenceProfileId, 'claude')].inferenceProfileId" --output table
+```
+
+---
+
 ## Tutorials
 
 ### [Tutorial 01 — Strands Agents + AWS Bedrock AgentCore](./tutorial-01/)
